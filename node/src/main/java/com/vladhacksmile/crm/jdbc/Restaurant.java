@@ -30,4 +30,5 @@ public class Restaurant {
     @Column(name = "userId", nullable = false)
     private Long userId;
 
+    // время работы и т п? закрыт открыт и т п
 }

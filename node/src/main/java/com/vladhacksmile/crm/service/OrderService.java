@@ -18,4 +18,6 @@ public interface OrderService {
     Result<OrderDTO> getOrder(User authUser, Long orderId);
 
     Result<SearchResult<OrderDTO>> getAllOrdersByUser(User authUser, int pageNum, int pageSize, Long userId);
+
+    Result<SearchResult<OrderDTO>> getAllOrders(User authUser, int pageNum, int pageSize);
 }

@@ -50,4 +50,15 @@ public class OrderDTO {
      * Дата заказа
      */
     private LocalDateTime orderDate;
+
+    /**
+     * Доп инфа из телеграма
+     */
+    private Integer totalAmount;
+
+    private String telegramPaymentChargeId;
+
+    private String providerPaymentChargeId;
+
+    private String shippingOptionId;
 }

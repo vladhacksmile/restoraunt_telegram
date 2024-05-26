@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -78,7 +79,7 @@ public class ProductServiceImpl implements ProductService {
 
         Long productId = productDTO.getId();
         Product product = productDAO.findById(productId).orElse(null);
-        if (product == null) {
+        if (product == null || product.getDeletedDate() != null) {
             return resultWithStatus(NOT_FOUND, PRODUCT_NOT_FOUND);
         }
 
@@ -100,16 +101,19 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional
     public Result<ProductDTO> removeProduct(User authUser, Long productId) {
+        LocalDateTime now = LocalDateTime.now();
         if (productId == null) {
             return resultWithStatus(INCORRECT_PARAMS, PRODUCT_ID_IS_NULL);
         }
 
         Product product = productDAO.findById(productId).orElse(null);
-        if (product == null) {
+        if (product == null || product.getDeletedDate() != null) {
             return resultWithStatus(NOT_FOUND, PRODUCT_NOT_FOUND);
         }
 
-        productDAO.delete(product);
+        product.setDeletedDate(now);
+
+        productDAO.save(product);
 
         return resultOk(convert(product));
     }
@@ -121,7 +125,7 @@ public class ProductServiceImpl implements ProductService {
         }
 
         Product product = productDAO.findById(productId).orElse(null);
-        if (product == null) {
+        if (product == null || product.getDeletedDate() != null) {
             return resultWithStatus(NOT_FOUND, PRODUCT_NOT_FOUND);
         }
 

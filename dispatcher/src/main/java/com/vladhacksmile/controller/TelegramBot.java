@@ -5,11 +5,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
+import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
+import org.telegram.telegrambots.meta.api.methods.invoices.CreateInvoiceLink;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import javax.annotation.PostConstruct;
+import java.io.Serializable;
+
+import static org.aspectj.lang.reflect.DeclareAnnotation.Kind.Method;
 
 @Log4j2
 @Component
@@ -39,10 +44,10 @@ public class TelegramBot extends TelegramLongPollingBot {
         updateController.process(update);
     }
 
-    public void sendMessage(SendMessage sendMessage) {
-        if (sendMessage != null) {
+    public <T extends Serializable> void sendMessage(BotApiMethod<T> botApiMethod) {
+        if (botApiMethod != null) {
             try {
-                execute(sendMessage);
+                execute(botApiMethod);
             } catch (TelegramApiException e) {
                 log.error(e);
             }

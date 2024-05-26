@@ -4,11 +4,13 @@ import com.vladhacksmile.crm.dao.*;
 import com.vladhacksmile.crm.dto.OrderDTO;
 import com.vladhacksmile.crm.dto.ProductDTO;
 import com.vladhacksmile.crm.dto.ShoppingCartDTO;
+import com.vladhacksmile.crm.gpt.TelegramEmoji;
 import com.vladhacksmile.crm.jdbc.*;
 import com.vladhacksmile.crm.model.result.Result;
 import com.vladhacksmile.crm.model.result.SearchResult;
 import com.vladhacksmile.crm.service.OrderService;
 import com.vladhacksmile.crm.service.UserService;
+import com.vladhacksmile.crm.service.impl.dispatchers.ProducerServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -17,6 +19,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
@@ -37,11 +40,11 @@ import static com.vladhacksmile.crm.utils.AuthUtils.checkAccess;
 @Service
 public class OrderServiceImpl implements OrderService {
 
-//    @Autowired
-//    private Clock clock;
-
     @Autowired
     private ProductDAO productDAO;
+
+    @Autowired
+    private ProducerServiceImpl producerService;
 
     @Autowired
     private OrderDAO orderDAO;
@@ -57,6 +60,9 @@ public class OrderServiceImpl implements OrderService {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private TelegramUserDAO telegramUserDAO;
 
     @Override
     @Transactional
@@ -150,6 +156,10 @@ public class OrderServiceImpl implements OrderService {
             return checkAccessResult.cast();
         }
 
+        if (order.getMakerId() != null && !Objects.equals(authUser.getId(), order.getMakerId())) {
+            return resultWithStatus(INCORRECT_STATE, ORDER_BUSY);
+        }
+
         if (Objects.equals(order.getOrderStatus(), orderStatus)) {
             return resultWithStatus(INCORRECT_STATE, SAME_STATUSES);
         }
@@ -158,9 +168,24 @@ public class OrderServiceImpl implements OrderService {
             return resultWithStatus(INCORRECT_STATE, ORDER_CANCELLED);
         }
 
+        if (order.getOrderStatus() == OrderStatus.GIVEN) {
+            return resultWithStatus(INCORRECT_STATE, ORDER_GIVEN);
+        }
+
+        if (order.getOrderStatus() == OrderStatus.NEW) {
+            order.setMakerId(authUser.getId());
+        }
         order.setOrderStatus(orderStatus);
         order.setOrderStatusChanged(now);
         orderDAO.save(order);
+
+        TelegramUser telegramUser = telegramUserDAO.findByUserId(order.getUserId()).orElse(null);
+        if (telegramUser != null) {
+            SendMessage sendMessage = new SendMessage();
+            sendMessage.setChatId(telegramUser.getChatId());
+            sendMessage.setText(TelegramEmoji.BURGER + " Статус вашего заказа №" + order.getId() + " обновлен! Новый статус заказа " + order.getOrderStatus() + "!");
+            producerService.producerAnswer(sendMessage);
+        }
 
         return resultOk(convert(order));
     }
@@ -224,6 +249,27 @@ public class OrderServiceImpl implements OrderService {
                 orders.size(), orderPage.getTotalPages(), orderPage.getTotalElements()));
     }
 
+    @Override
+    public Result<SearchResult<OrderDTO>> getAllOrders(User authUser, int pageNum, int pageSize) {
+        if (pageNum < 1) {
+            return resultWithStatus(INCORRECT_PARAMS, PAGE_NUM_MUST_BE_POSITIVE);
+        }
+
+        if (pageSize < 1) {
+            return resultWithStatus(INCORRECT_PARAMS, PAGE_SIZE_MUST_BE_POSITIVE);
+        }
+
+        Pageable pageable = PageRequest.of(pageNum - 1, pageSize, Sort.by(Sort.Direction.ASC, "id"));
+        Page<Order> orderPage = orderDAO.findAll(pageable);
+        List<Order> orders = orderPage.stream().toList();
+        if (CollectionUtils.isEmpty(orders)) {
+            return resultWithStatus(NOT_FOUND, ORDER_NOT_FOUND);
+        }
+
+        return resultOk(makeSearchResult(orders.stream().map(this::convert).collect(Collectors.toList()),
+                orders.size(), orderPage.getTotalPages(), orderPage.getTotalElements()));
+    }
+
     private OrderDTO convert(Order order) {
         OrderDTO orderDTO = new OrderDTO();
         orderDTO.setId(order.getId());
@@ -233,7 +279,10 @@ public class OrderServiceImpl implements OrderService {
         orderDTO.setOrderStatus(order.getOrderStatus());
         orderDTO.setOrderStatusChanged(order.getOrderStatusChanged());
         orderDTO.setOrderDate(order.getOrderDate());
-
+        orderDTO.setTotalAmount(order.getTotalAmount());
+        orderDTO.setTelegramPaymentChargeId(order.getTelegramPaymentChargeId());
+        orderDTO.setProviderPaymentChargeId(order.getProviderPaymentChargeId());
+        orderDTO.setShippingOptionId(order.getShippingOptionId());
         return orderDTO;
     }
 
@@ -246,7 +295,10 @@ public class OrderServiceImpl implements OrderService {
         order.setOrderStatus(orderDTO.getOrderStatus());
         order.setOrderStatusChanged(orderDTO.getOrderStatusChanged());
         order.setOrderDate(orderDTO.getOrderDate());
-
+        order.setTotalAmount(orderDTO.getTotalAmount());
+        order.setTelegramPaymentChargeId(orderDTO.getTelegramPaymentChargeId());
+        order.setProviderPaymentChargeId(orderDTO.getProviderPaymentChargeId());
+        order.setShippingOptionId(orderDTO.getShippingOptionId());
         return order;
     }
 

@@ -7,6 +7,7 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 
 @Component
 public class MessageUtils {
+
     public static SendMessage generateSendMessage(Update update, String text) {
         if (update == null || update.getMessage() == null) {
             return null;

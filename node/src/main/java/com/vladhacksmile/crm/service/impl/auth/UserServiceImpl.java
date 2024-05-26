@@ -148,10 +148,7 @@ public class UserServiceImpl implements UserService {
             return checkAccessResult.cast();
         }
 
-        ShoppingCart shoppingCart = shoppingCartDAO.findByUserId(userId).orElse(null);
-        if (shoppingCart != null) {
-            shoppingCartDAO.delete(shoppingCart);
-        }
+        shoppingCartDAO.findByUserId(userId).ifPresent(shoppingCart -> shoppingCartDAO.delete(shoppingCart));
 
         userDAO.delete(user);
 

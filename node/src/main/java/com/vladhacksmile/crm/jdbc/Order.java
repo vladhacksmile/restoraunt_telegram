@@ -31,6 +31,12 @@ public class Order {
     private Long userId;
 
     /**
+     * Идентификатор исполнителя
+     */
+    @Column(name = "makerId")
+    private Long makerId;
+
+    /**
      * Идентификатор ресторана
      */
     @Column(name = "restaurantId", nullable = false)
@@ -60,4 +66,19 @@ public class Order {
      */
     @Column(name = "orderDate", nullable = false)
     private LocalDateTime orderDate;
+
+    /**
+     * Общая
+     */
+    @Column(name = "totalAmount")
+    private Integer totalAmount;
+
+    @Column(name = "telegramPaymentChargeId")
+    private String telegramPaymentChargeId;
+
+    @Column(name = "providerPaymentChargeId")
+    private String providerPaymentChargeId;
+
+    @Column(name = "shippingOptionId")
+    private String shippingOptionId;
 }

@@ -9,14 +9,14 @@ import org.springframework.web.client.RestTemplate;
 @Service
 public class GPTService {
 
-    @Qualifier("openaiRestTemplate")
+    @Qualifier("aiRestTemplate")
     @Autowired
     private RestTemplate restTemplate;
 
-    @Value("${openai.model}")
+    @Value("${ai.model}")
     private String model;
 
-    @Value("${openai.api.url}")
+    @Value("${ai.api.url}")
     private String apiUrl;
 
     public String request(String prompt) {

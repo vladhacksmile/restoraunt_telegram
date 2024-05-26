@@ -34,9 +34,6 @@ public class TelegramUserServiceImpl {
     private UserService userService;
 
     @Autowired
-    private UserDAO userDAO;
-
-    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @Transactional

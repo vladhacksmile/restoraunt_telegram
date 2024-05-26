@@ -15,7 +15,6 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     private UserDAO userRepository;
 
     @Override
-    @Transactional
     public User loadUserByUsername(String phoneNumber) throws UsernameNotFoundException {
         return userRepository.findByPhoneNumber(phoneNumber)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with phoneNumber: " + phoneNumber));

@@ -7,7 +7,7 @@ public enum Role {
 
     ADMIN("SYSTEM"),
     CLIENT("CLIENT"),
-    EMPLOYER("EMPLOYER");
+    MAKER("MAKER");
 
     private final String name;
 

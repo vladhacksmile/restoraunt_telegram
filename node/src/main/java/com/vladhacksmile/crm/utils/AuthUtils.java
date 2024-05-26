@@ -22,7 +22,7 @@ public class AuthUtils {
             return resultWithStatus(ACCESS_DENIED, USER_IS_NULL);
         }
 
-        if (authUser.getRole() != Role.ADMIN && authUser.getRole() != Role.EMPLOYER) {
+        if (authUser.getRole() != Role.ADMIN && authUser.getRole() != Role.MAKER) {
             if (!Objects.equals(authUser.getId(), user.getId())) {
                 return resultWithStatus(ACCESS_DENIED, DIFFERENT_USER_IDS);
             }

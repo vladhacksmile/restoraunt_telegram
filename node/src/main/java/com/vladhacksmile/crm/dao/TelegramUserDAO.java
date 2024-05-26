@@ -10,4 +10,6 @@ import java.util.Optional;
 public interface TelegramUserDAO extends JpaRepository<TelegramUser, Long> {
 
     Optional<TelegramUser> findByTelegramId(Long telegramId);
+
+    Optional<TelegramUser> findByUserId(Long userId);
 }
