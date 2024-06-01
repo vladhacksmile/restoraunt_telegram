@@ -2,12 +2,12 @@ package com.vladhacksmile.crm.service.impl.auth;
 
 import com.vladhacksmile.crm.dao.ShoppingCartDAO;
 import com.vladhacksmile.crm.dao.UserDAO;
+import com.vladhacksmile.crm.dto.OrderDTO;
 import com.vladhacksmile.crm.dto.ShoppingCartDTO;
 import com.vladhacksmile.crm.dto.auth.AuthDTO;
 import com.vladhacksmile.crm.dto.auth.UserDTO;
-import com.vladhacksmile.crm.jdbc.Role;
-import com.vladhacksmile.crm.jdbc.ShoppingCart;
-import com.vladhacksmile.crm.jdbc.User;
+import com.vladhacksmile.crm.gpt.TelegramEmoji;
+import com.vladhacksmile.crm.jdbc.*;
 import com.vladhacksmile.crm.model.result.Result;
 import com.vladhacksmile.crm.service.UserService;
 import com.vladhacksmile.crm.utils.jwt.JwtUtils;
@@ -20,7 +20,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 import static com.vladhacksmile.crm.model.result.Result.resultOk;
@@ -231,6 +233,38 @@ public class UserServiceImpl implements UserService {
         return resultOk(convert(user));
     }
 
+    @Override
+    @Transactional
+    public Result<UserDTO> updateUserRole(User authUser, Long userId, Role role) {
+        LocalDateTime now = LocalDateTime.now();
+        if (userId == null) {
+            return resultWithStatus(INCORRECT_PARAMS, USER_ID_IS_NULL);
+        }
+
+        if (role == null) {
+            return resultWithStatus(INCORRECT_PARAMS, ROLE_IS_NULL);
+        }
+
+        User user = userDAO.findById(userId).orElse(null);
+        if (user == null) {
+            return resultWithStatus(NOT_FOUND, USER_NOT_FOUND);
+        }
+
+        Result<?> checkAccessResult = checkAccess(authUser, user);
+        if (checkAccessResult.isError()) {
+            return checkAccessResult.cast();
+        }
+
+        if (Objects.equals(user.getRole(), role)) {
+            return resultWithStatus(INCORRECT_STATE, SAME_ROLE);
+        }
+
+        user.setRole(role);
+        userDAO.save(user);
+
+        return resultOk(convert(user));
+    }
+
     @Transactional
     public Result<ShoppingCartDTO> updateUserShoppingCart(User authUser, ShoppingCartDTO shoppingCartDTO) {
         if (shoppingCartDTO.getId() == null && shoppingCartDTO.getUserId() == null) {
@@ -292,7 +326,7 @@ public class UserServiceImpl implements UserService {
         user.setPhoneNumber(userDTO.getPhoneNumber());
         user.setMail(userDTO.getMail());
         user.setPassword(userDTO.getPassword());
-
+        user.setRole(userDTO.getRole());
         return user;
     }
 
@@ -305,7 +339,7 @@ public class UserServiceImpl implements UserService {
         userDTO.setPhoneNumber(user.getPhoneNumber());
         userDTO.setMail(user.getMail());
         userDTO.setPassword(user.getPassword());
-
+        userDTO.setRole(user.getRole());
         return userDTO;
     }
 

@@ -15,6 +15,8 @@ public interface OrderService {
 
     Result<OrderDTO> updateOrderStatus(User authUser, Long orderId, OrderStatus orderStatus);
 
+    Result<OrderDTO> updateOrderPaymentInfo(User authUser, Long orderId, String paymentInfo);
+
     Result<OrderDTO> getOrder(User authUser, Long orderId);
 
     Result<SearchResult<OrderDTO>> getAllOrdersByUser(User authUser, int pageNum, int pageSize, Long userId);

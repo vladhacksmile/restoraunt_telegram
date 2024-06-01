@@ -46,4 +46,10 @@ public class UserDTO {
      * Пароль
      */
     private String password;
+
+    /**
+     * Роль
+     */
+    private Role role;
+
 }

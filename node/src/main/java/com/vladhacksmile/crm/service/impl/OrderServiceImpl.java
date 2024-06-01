@@ -11,6 +11,7 @@ import com.vladhacksmile.crm.model.result.SearchResult;
 import com.vladhacksmile.crm.service.OrderService;
 import com.vladhacksmile.crm.service.UserService;
 import com.vladhacksmile.crm.service.impl.dispatchers.ProducerServiceImpl;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -183,9 +184,41 @@ public class OrderServiceImpl implements OrderService {
         if (telegramUser != null) {
             SendMessage sendMessage = new SendMessage();
             sendMessage.setChatId(telegramUser.getChatId());
-            sendMessage.setText(TelegramEmoji.BURGER + " Статус вашего заказа №" + order.getId() + " обновлен! Новый статус заказа " + order.getOrderStatus() + "!");
+            sendMessage.setText(TelegramEmoji.BURGER + " Статус вашего заказа №" + order.getId() + " обновлен! Новый статус заказа " + order.getOrderStatus() + "!" + (order.getOrderStatus() == OrderStatus.READY ? (" Вы можете забрать его на кассе!" + (authUser.getRole() != Role.CLIENT && StringUtils.isNotEmpty(order.getComment()) ? (" Комментарий к заказу: " + order.getComment()) : "")) : ""));
             producerService.producerAnswer(sendMessage);
         }
+
+        return resultOk(convert(order));
+    }
+
+    @Override
+    @Transactional
+    public Result<OrderDTO> updateOrderPaymentInfo(User authUser, Long orderId, String paymentInfo) {
+        if (orderId == null) {
+            return resultWithStatus(INCORRECT_PARAMS, ORDER_ID_IS_NULL);
+        }
+
+        if (StringUtils.isEmpty(paymentInfo)) {
+            return resultWithStatus(INCORRECT_PARAMS, PAYMENT_INFO_IS_NULL);
+        }
+
+        Order order = orderDAO.findById(orderId).orElse(null);
+        if (order == null) {
+            return resultWithStatus(NOT_FOUND, ORDER_NOT_FOUND);
+        }
+
+        User user = userDAO.findById(order.getUserId()).orElse(null);
+        if (user == null) {
+            return resultWithStatus(NOT_FOUND, USER_NOT_FOUND);
+        }
+
+        Result<?> checkAccessResult = checkAccess(authUser, user);
+        if (checkAccessResult.isError()) {
+            return checkAccessResult.cast();
+        }
+
+        order.setPaymentInfo(paymentInfo);
+        orderDAO.save(order);
 
         return resultOk(convert(order));
     }
@@ -283,6 +316,8 @@ public class OrderServiceImpl implements OrderService {
         orderDTO.setTelegramPaymentChargeId(order.getTelegramPaymentChargeId());
         orderDTO.setProviderPaymentChargeId(order.getProviderPaymentChargeId());
         orderDTO.setShippingOptionId(order.getShippingOptionId());
+        orderDTO.setComment(order.getComment());
+        orderDTO.setPaymentInfo(order.getPaymentInfo());
         return orderDTO;
     }
 
@@ -299,6 +334,8 @@ public class OrderServiceImpl implements OrderService {
         order.setTelegramPaymentChargeId(orderDTO.getTelegramPaymentChargeId());
         order.setProviderPaymentChargeId(orderDTO.getProviderPaymentChargeId());
         order.setShippingOptionId(orderDTO.getShippingOptionId());
+        order.setComment(orderDTO.getComment());
+        order.setPaymentInfo(orderDTO.getPaymentInfo());
         return order;
     }
 

@@ -12,4 +12,6 @@ public class GPTAICombo {
     private long productId;
 
     private int count;
+
+    private String info;
 }

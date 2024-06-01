@@ -36,6 +36,7 @@ import org.telegram.telegrambots.meta.api.objects.payments.OrderInfo;
 import org.telegram.telegrambots.meta.api.objects.payments.PreCheckoutQuery;
 import org.telegram.telegrambots.meta.api.objects.payments.SuccessfulPayment;
 
+import javax.websocket.ClientEndpoint;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -152,22 +153,35 @@ public class MessageProcessorServiceImpl {
                 return removeCart(authUser, message, telegramUser);
             }
             if (command.equalsIgnoreCase("/order")) {
-                return requestOrder(authUser, message, telegramUser);
+                if (authUser.getRole() != Role.CLIENT) {
+                    return makeWaiterOrder(authUser, message, telegramUser);
+                } else {
+                    return requestOrder(authUser, message, telegramUser);
+                }
             }
             if (command.equalsIgnoreCase("/orders")) {
                 return getOrders(authUser, message, telegramUser);
             }
-            if (command.equalsIgnoreCase("/status")) {
+            if (command.equalsIgnoreCase("/status") && authUser.getRole() != Role.CLIENT) {
                 return updateOrderStatus(authUser, message, telegramUser);
             }
             if (command.equals("/aicombo")) {
                 return makeAICombo(authUser, message, telegramUser);
             }
-            if (command.equals("/aibusy")) {
+            if (command.equals("/waiter") && authUser.getRole() != Role.CLIENT) {
+                return waiterOrder(authUser, message, telegramUser);
+            }
+            if (command.equals("/aibusy") && authUser.getRole() != Role.CLIENT) {
                 return makeAIRestaurantBusy(message);
             }
-            if (command.equals("/aiadvice")) {
+            if (command.equals("/aiadvice") && authUser.getRole() != Role.CLIENT) {
                 return adviceAIOrders(authUser, message);
+            }
+            if (command.equals("/role")) {
+                return updateUserRole(authUser, message);
+            }
+            if (command.equals("/payinfo") && authUser.getRole() != Role.CLIENT) {
+                return updateOrderPaymentInfo(authUser, message);
             }
         }
         return makeSendMessage(message, TelegramEmoji.WARNING + " Неизвестная команда!");
@@ -224,6 +238,60 @@ public class MessageProcessorServiceImpl {
         }
     }
 
+    public SendMessage waiterOrder(User authUser, Message message, TelegramUser telegramUser) {
+        Result<SearchResult<ProductDTO>> getProductsResult = productService.getAll(authUser, 1, 100, null, null, null, null, null);
+        if (getProductsResult.isError()) {
+            return makeErrorSendMessage(message, getProductsResult);
+        }
+        try {
+            String productsJSON = objectMapper.writeValueAsString(getProductsResult.getObject().getObjects());
+            String gptPrompt = "Анализируй товары в JSON.Найди все товары по описанию и количеству.Ответ только в JSON и с существующими productId и кол-вом!Формат:" +
+                    "[{\"productId\": (PRODUCT_ID_1), \"count\": (кол-во товара)}, {\"productId\": {PRODUCT_ID_2}, \"count\": {кол-во товара}}]. Если нет или ошибка, то []!" +
+                    "Товары ресторана: " + productsJSON +
+                    "Нужные товары и количество: " + message.getText().toLowerCase().replace("/waiter", "");
+            String gptResult = gptService.request(gptPrompt);
+            if (StringUtils.isEmpty(gptResult)) {
+                return makeSendMessage(message, TelegramEmoji.WARNING + "Пустой результат от ИИ!");
+            }
+            List<GPTAICombo> combos = objectMapper.readValue(gptResult, new TypeReference<>(){});
+            if (CollectionUtils.isEmpty(combos)) {
+                return makeSendMessage(message, TelegramEmoji.WARNING + " Не смогли дешифровать!");
+            }
+            StringBuilder stringBuilder = new StringBuilder(TelegramEmoji.ACCEPT + " Пожалуйста, проверьте заказ и если нужно скорректируйте его в корзине:\n\n");
+            int index = 0;
+            int price = 0;
+            List<OrderItem> orderItems = new ArrayList<>();
+            for (GPTAICombo combo: combos) {
+                Result<ProductDTO> getProductResult = productService.getProduct(authUser, combo.getProductId());
+                if (getProductResult.isError()) {
+                    return makeErrorSendMessage(message, getProductResult);
+                }
+                ProductDTO productDTO = getProductResult.getObject();
+                stringBuilder.append(TelegramEmoji.PIZZA).append(" ").append(++index).append(". ").append(productDTO.getName()).append("\n");
+                stringBuilder.append(TelegramEmoji.ID).append(" ID: ").append(productDTO.getId()).append("\n");
+                stringBuilder.append(TelegramEmoji.DOLLAR).append(" Цена: ").append(productDTO.getPrice() * combo.getCount()).append("\n");
+                stringBuilder.append(TelegramEmoji.GRID).append(" Количество: ").append(combo.getCount()).append("\n\n");
+                price += productDTO.getPrice() * combo.getCount();
+                OrderItem orderItem = new OrderItem();
+                orderItem.setCount(combo.getCount());
+                orderItem.setProductId(combo.getProductId());
+                orderItem.setPrice((long) productDTO.getPrice() * combo.getCount());
+                orderItems.add(orderItem);
+            }
+            stringBuilder.append(TelegramEmoji.EURO).append(" Общая цена: ").append(price).append("\n\n");
+            ShoppingCartDTO shoppingCartDTO = new ShoppingCartDTO();
+            shoppingCartDTO.setOrderItems(orderItems);
+            shoppingCartDTO.setUserId(telegramUser.getUserId());
+            Result<ShoppingCartDTO> updateUserShoppingCartResult = userService.updateUserShoppingCart(authUser, shoppingCartDTO);
+            if (updateUserShoppingCartResult.isError()) {
+                return makeErrorSendMessage(message, updateUserShoppingCartResult);
+            }
+            return makeSendMessage(message, stringBuilder.toString());
+        } catch (JsonProcessingException e) {
+            return makeSendMessage(message, TelegramEmoji.WARNING + "Ошибка при обработке данных! " + e.getMessage());
+        }
+    }
+
     public SendMessage makeAICombo(User authUser, Message message, TelegramUser telegramUser) {
         Result<SearchResult<OrderDTO>> getAllOrdersByUserResult = orderService.getAllOrdersByUser(authUser, 1, 10, telegramUser.getUserId());
         if (getAllOrdersByUserResult.isError()) {
@@ -237,11 +305,19 @@ public class MessageProcessorServiceImpl {
             List<OrderItem> orderItems = getAllOrdersByUserResult.getObject().getObjects().stream().map(OrderDTO::getOrderItems).flatMap(List::stream).toList();
             String orderJSON = objectMapper.writeValueAsString(orderItems);
             String productsJSON = objectMapper.writeValueAsString(getProductsResult.getObject().getObjects());
-            String gptPrompt = "Анализируй заказы клиента в JSON.Предложи комбо из горячего блюда и напитка.Учти предпочтения клиента и добавь новые.Ответ в JSON и с существующими productId!Минимум 2 товара, максимум 3!Формат:" +
-                    "[{\"productId\": (PRODUCT_ID_1), \"count\": (кол-во товара), {\"productId\": {PRODUCT_ID_1}, \"count\": {кол-во товара}}]. Если нет или ошибка, то []!" +
-            "Заказы клиента: " + orderJSON +
-            "Товары ресторана: " + productsJSON +
-            "Предпочтения клиента: " + message.getText().toLowerCase().replace("/aicombo", "");
+            String gptPrompt;
+            if (authUser.getRole() == Role.CLIENT) {
+                gptPrompt = "Анализируй заказы клиента в JSON.Предложи комбо из горячего блюда и напитка.Учти предпочтения клиента и добавь новые.Ответ в JSON и с существующими productId!Минимум 2 товара, максимум 3!Формат:" +
+                        "[{\"productId\": (PRODUCT_ID_1), \"count\": (кол-во товара), {\"productId\": {PRODUCT_ID_2}, \"count\": {кол-во товара}}]. Если нет или ошибка, то []!" +
+                        "Заказы клиента: " + orderJSON +
+                        "Товары ресторана: " + productsJSON +
+                        "Предпочтения клиента: " + message.getText().toLowerCase().replace("/aicombo", "");
+            } else {
+                gptPrompt = "Анализируй товары ресторана и предпочтения клиента.Предложи необходимые товары и напиток к ним.Можешь предложить что-то свое.Ответ в JSON и с существующими productId!Максимум 10 товаров!Формат:" +
+                        "[{\"productId\": (PRODUCT_ID_1), \"count\": (кол-во товара), {\"productId\": {PRODUCT_ID_2}, \"count\": {кол-во товара}}]. Если нет или ошибка, то []!" +
+                        "Товары ресторана: " + productsJSON +
+                        "Предпочтения клиента: " + message.getText().toLowerCase().replace("/aicombo", "");
+            }
             String gptResult = gptService.request(gptPrompt);
             if (StringUtils.isEmpty(gptResult)) {
                 return makeSendMessage(message, TelegramEmoji.WARNING + "Пустой результат от ИИ!");
@@ -397,6 +473,24 @@ public class MessageProcessorServiceImpl {
         return makeSendMessage(message, TelegramEmoji.ACCEPT + " Ресторан добавлен!");
     }
 
+    public SendMessage updateOrderPaymentInfo(User authUser, Message message) {
+        String[] args = message.getText().split(" ");
+        Result<OrderDTO> updateUserRoleResult = orderService.updateOrderPaymentInfo(authUser, Long.parseLong(args[1]), message.getText().replace("/payinfo " + args[1] + " ", ""));
+        if (updateUserRoleResult.isError()) {
+            return makeErrorSendMessage(message, updateUserRoleResult);
+        }
+        return makeSendMessage(message, TelegramEmoji.ACCEPT + " Платежная информация заказа № " + updateUserRoleResult.getObject().getId() + " обновлена!");
+    }
+
+    public SendMessage updateUserRole(User authUser, Message message) {
+        String[] args = message.getText().split(" ");
+        Result<UserDTO> updateUserRoleResult = userService.updateUserRole(authUser, Long.parseLong(args[1]), Role.valueOf(args[2].toUpperCase()));
+        if (updateUserRoleResult.isError()) {
+            return makeErrorSendMessage(message, updateUserRoleResult);
+        }
+        return makeSendMessage(message, TelegramEmoji.ACCEPT + " Роль пользователя " + updateUserRoleResult.getObject().getMail() + " обновлена! Новая роль: " + updateUserRoleResult.getObject().getRole() + "!");
+    }
+
     public SendMessage updateOrderStatus(User authUser, Message message, TelegramUser telegramUser) {
         String[] args = message.getText().split(" ");
         Result<OrderDTO> updateOrderStatusResult = orderService.updateOrderStatus(authUser, Long.parseLong(args[1]), OrderStatus.valueOf(args[2].toUpperCase()));
@@ -441,6 +535,7 @@ public class MessageProcessorServiceImpl {
         orderDTO.setShippingOptionId(successfulPayment.getShippingOptionId());
         orderDTO.setTelegramPaymentChargeId(successfulPayment.getTelegramPaymentChargeId());
         orderDTO.setProviderPaymentChargeId(successfulPayment.getProviderPaymentChargeId());
+        orderDTO.setPaymentInfo("Заказ оформлен клиентом через Telegram бота!");
         Result<OrderDTO> createOrderResult = orderService.createOrder(authUser, orderDTO);
         if (createOrderResult.isError()) {
             return makeErrorSendMessage(message, createOrderResult);
@@ -448,6 +543,27 @@ public class MessageProcessorServiceImpl {
 
         long price = createOrderResult.getObject().getOrderItems().stream().mapToLong(OrderItem::getPrice).sum();
         return makeSendMessage(message, TelegramEmoji.ACCEPT + " Ваш заказ №" + createOrderResult.getObject().getId() + " оформлен и принят в работу! Сумма заказа: " + price + " руб!");
+    }
+
+    public SendMessage makeWaiterOrder(User authUser, Message message, TelegramUser telegramUser) {
+        Result<ShoppingCartDTO> getUserShoppingCartResult = userService.getUserShoppingCart(authUser, telegramUser.getUserId());
+        if (getUserShoppingCartResult.isError()) {
+            return makeErrorSendMessage(message, getUserShoppingCartResult);
+        }
+        ShoppingCartDTO shoppingCartDTO = getUserShoppingCartResult.getObject();
+        long price = shoppingCartDTO.getOrderItems().stream().mapToLong(OrderItem::getPrice).sum();
+        OrderDTO orderDTO = new OrderDTO();
+        orderDTO.setUserId(telegramUser.getUserId());
+        orderDTO.setRestaurantId(1L);
+        orderDTO.setTotalAmount((int) price);
+        orderDTO.setComment(message.getText().toLowerCase().replace("/order", ""));
+        orderDTO.setPaymentInfo("Заказ оформлен официантом через Telegram бота!");
+        Result<OrderDTO> createOrderResult = orderService.createOrder(authUser, orderDTO);
+        if (createOrderResult.isError()) {
+            return makeErrorSendMessage(message, createOrderResult);
+        }
+
+        return makeSendMessage(message, TelegramEmoji.ACCEPT + "Заказ №" + createOrderResult.getObject().getId() + " оформлен и принят в работу! Сумма заказа: " + price + " руб!");
     }
 
     public SendMessage getProducts(User authUser, Message message, TelegramUser telegramUser) {

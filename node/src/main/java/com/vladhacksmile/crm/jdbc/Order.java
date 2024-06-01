@@ -81,4 +81,13 @@ public class Order {
 
     @Column(name = "shippingOptionId")
     private String shippingOptionId;
+
+    @Column(name = "comment")
+    private String comment;
+
+    @Column(name = "paymentInfo")
+    private String paymentInfo;
+
+    @Column(name = "info")
+    private String info;
 }

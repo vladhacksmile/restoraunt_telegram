@@ -61,4 +61,8 @@ public class OrderDTO {
     private String providerPaymentChargeId;
 
     private String shippingOptionId;
+
+    private String comment;
+
+    private String paymentInfo;
 }
