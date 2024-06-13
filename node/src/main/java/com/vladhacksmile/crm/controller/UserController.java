@@ -51,7 +51,7 @@ public class UserController {
     }
 
     @GetMapping("/shopping_cart/{user_id}")
-    public ResponseEntity<Result<ShoppingCartDTO>> updateUserShoppingCart(@AuthenticationPrincipal User authUser, @PathVariable Long userId) {
+    public ResponseEntity<Result<ShoppingCartDTO>> getUserShoppingCart(@AuthenticationPrincipal User authUser, @PathVariable Long userId) {
         return ResponseMapper.map(userService.getUserShoppingCart(authUser, userId));
     }
 }
