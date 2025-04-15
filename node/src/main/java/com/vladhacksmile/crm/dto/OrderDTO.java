@@ -1,8 +1,7 @@
 package com.vladhacksmile.crm.dto;
 
-import com.vladhacksmile.crm.converter.OrderItemConverter;
-import com.vladhacksmile.crm.jdbc.OrderItem;
-import com.vladhacksmile.crm.jdbc.OrderStatus;
+import com.vladhacksmile.crm.jdbc.order.OrderItem;
+import com.vladhacksmile.crm.jdbc.order.OrderStatus;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -52,17 +51,32 @@ public class OrderDTO {
     private LocalDateTime orderDate;
 
     /**
-     * Доп инфа из телеграма
+     * Общая сумма (Telegram)
      */
     private Integer totalAmount;
 
+    /**
+     * Платежный id Telegram
+     */
     private String telegramPaymentChargeId;
 
+    /**
+     * Платежный id провайдера
+     */
     private String providerPaymentChargeId;
 
+    /**
+     * Опциональный id Telegram
+     */
     private String shippingOptionId;
 
+    /**
+     * Комментарий к заказу
+     */
     private String comment;
 
+    /**
+     * Платежная информация
+     */
     private String paymentInfo;
 }

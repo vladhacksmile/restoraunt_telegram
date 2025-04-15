@@ -2,14 +2,14 @@ package com.vladhacksmile.crm.service.impl.auth;
 
 import com.vladhacksmile.crm.dao.ShoppingCartDAO;
 import com.vladhacksmile.crm.dao.UserDAO;
-import com.vladhacksmile.crm.dto.OrderDTO;
 import com.vladhacksmile.crm.dto.ShoppingCartDTO;
 import com.vladhacksmile.crm.dto.auth.AuthDTO;
 import com.vladhacksmile.crm.dto.auth.UserDTO;
-import com.vladhacksmile.crm.gpt.TelegramEmoji;
 import com.vladhacksmile.crm.jdbc.*;
+import com.vladhacksmile.crm.jdbc.user.Role;
+import com.vladhacksmile.crm.jdbc.user.User;
 import com.vladhacksmile.crm.model.result.Result;
-import com.vladhacksmile.crm.service.UserService;
+import com.vladhacksmile.crm.service.auth.UserService;
 import com.vladhacksmile.crm.utils.jwt.JwtUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,9 +20,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 
-import java.time.LocalDateTime;
 import java.util.Objects;
 
 import static com.vladhacksmile.crm.model.result.Result.resultOk;
@@ -135,12 +133,12 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public Result<UserDTO> removeUser(User authUser, Long userId) {
-        if (userId == null) {
+    public Result<UserDTO> removeUser(User authUser, Long id) {
+        if (id == null) {
             return resultWithStatus(INCORRECT_PARAMS, USER_ID_IS_NULL);
         }
 
-        User user = userDAO.findById(userId).orElse(null);
+        User user = userDAO.findById(id).orElse(null);
         if (user == null) {
             return resultWithStatus(NOT_FOUND, USER_NOT_FOUND);
         }
@@ -150,7 +148,7 @@ public class UserServiceImpl implements UserService {
             return checkAccessResult.cast();
         }
 
-        shoppingCartDAO.findByUserId(userId).ifPresent(shoppingCart -> shoppingCartDAO.delete(shoppingCart));
+        shoppingCartDAO.findByUserId(id).ifPresent(shoppingCart -> shoppingCartDAO.delete(shoppingCart));
 
         userDAO.delete(user);
 
@@ -158,12 +156,12 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public Result<UserDTO> getUser(User authUser, Long userId) {
-        if (userId == null) {
+    public Result<UserDTO> getUser(User authUser, Long id) {
+        if (id == null) {
             return resultWithStatus(INCORRECT_PARAMS, USER_ID_IS_NULL);
         }
 
-        User user = userDAO.findById(userId).orElse(null);
+        User user = userDAO.findById(id).orElse(null);
         if (user == null) {
             return resultWithStatus(NOT_FOUND, USER_NOT_FOUND);
         }
@@ -207,7 +205,6 @@ public class UserServiceImpl implements UserService {
         setIfUpdated(userDTO.getPatronymic(), user.getPatronymic(), user::setPatronymic);
 
         if (!Objects.equals(userDTO.getPhoneNumber(), user.getPhoneNumber())) {
-            // todo всякие проверки подтверждение и т п
             if (userDAO.existsByPhoneNumber(userDTO.getPhoneNumber())) {
                 return resultWithStatus(INCORRECT_PARAMS, USER_PHONE_NUMBER_EXISTS);
             }
@@ -215,7 +212,6 @@ public class UserServiceImpl implements UserService {
         }
 
         if (!Objects.equals(userDTO.getMail(), user.getMail())) {
-            // todo всякие проверки подтверждение и т п
             if (userDAO.existsByMail(userDTO.getMail())) {
                 return resultWithStatus(INCORRECT_PARAMS, USER_MAIL_EXISTS);
             }
@@ -224,7 +220,6 @@ public class UserServiceImpl implements UserService {
 
         String encodedPassword = passwordEncoder.encode(userDTO.getPassword());
         if (!Objects.equals(encodedPassword, user.getPassword())) {
-            // todo всякие проверки подтверждение и т п
             user.setPassword(encodedPassword);
         }
 
@@ -236,7 +231,6 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public Result<UserDTO> updateUserRole(User authUser, Long userId, Role role) {
-        LocalDateTime now = LocalDateTime.now();
         if (userId == null) {
             return resultWithStatus(INCORRECT_PARAMS, USER_ID_IS_NULL);
         }
@@ -316,7 +310,6 @@ public class UserServiceImpl implements UserService {
         return shoppingCartDTO;
     }
 
-    // todo: поиск с фильтром
     private User convert(UserDTO userDTO) {
         User user = new User();
         user.setId(userDTO.getId());

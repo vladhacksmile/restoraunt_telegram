@@ -1,15 +1,11 @@
 package com.vladhacksmile.crm.controller;
 
 import com.vladhacksmile.crm.dto.ProductDTO;
-import com.vladhacksmile.crm.dto.ResponseMapper;
-import com.vladhacksmile.crm.dto.ShoppingCartDTO;
-import com.vladhacksmile.crm.dto.auth.AuthDTO;
-import com.vladhacksmile.crm.dto.auth.UserDTO;
-import com.vladhacksmile.crm.jdbc.User;
+import com.vladhacksmile.crm.utils.ResponseMapper;
+import com.vladhacksmile.crm.jdbc.user.User;
 import com.vladhacksmile.crm.model.result.Result;
 import com.vladhacksmile.crm.model.result.SearchResult;
 import com.vladhacksmile.crm.service.ProductService;
-import com.vladhacksmile.crm.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -28,8 +24,8 @@ public class ProductController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Result<ProductDTO>> getProduct(@AuthenticationPrincipal User authUser, @PathVariable Long productId) {
-        return ResponseMapper.map(productService.getProduct(authUser, productId));
+    public ResponseEntity<Result<ProductDTO>> getProduct(@AuthenticationPrincipal User authUser, @PathVariable Long id) {
+        return ResponseMapper.map(productService.getProduct(authUser, id));
     }
 
     @GetMapping
@@ -50,8 +46,8 @@ public class ProductController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Result<ProductDTO>> removeProduct(@AuthenticationPrincipal User authUser, @PathVariable Long productId) {
-        return ResponseMapper.map(productService.removeProduct(authUser, productId));
+    public ResponseEntity<Result<ProductDTO>> removeProduct(@AuthenticationPrincipal User authUser, @PathVariable Long id) {
+        return ResponseMapper.map(productService.removeProduct(authUser, id));
     }
 
 }

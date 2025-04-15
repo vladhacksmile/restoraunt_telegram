@@ -11,9 +11,18 @@ import lombok.Setter;
 @NoArgsConstructor
 public class AuthDTO {
 
+    /**
+     * Номер телефона
+     */
     private String phoneNumber;
 
+    /**
+     * Пароль
+     */
     private String password;
 
+    /**
+     * JWT токен
+     */
     private String jwtToken;
 }

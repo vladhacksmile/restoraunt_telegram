@@ -1,6 +1,6 @@
 package com.vladhacksmile.crm.dao;
 
-import com.vladhacksmile.crm.jdbc.TelegramUser;
+import com.vladhacksmile.crm.jdbc.user.TelegramUser;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

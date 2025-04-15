@@ -1,11 +1,10 @@
-package com.vladhacksmile.crm.jdbc;
+package com.vladhacksmile.crm.jdbc.order;
 
 import com.vladhacksmile.crm.converter.OrderItemConverter;
 import lombok.*;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
-import java.time.ZonedDateTime;
 import java.util.List;
 
 @Entity(name = "UserOrder")
@@ -68,26 +67,44 @@ public class Order {
     private LocalDateTime orderDate;
 
     /**
-     * Общая
+     * Общая сумма
      */
     @Column(name = "totalAmount")
     private Integer totalAmount;
 
+    /**
+     * Платежный id Telegram
+     */
     @Column(name = "telegramPaymentChargeId")
     private String telegramPaymentChargeId;
 
+    /**
+     * Платежный id провайдера
+     */
     @Column(name = "providerPaymentChargeId")
     private String providerPaymentChargeId;
 
+    /**
+     * Опциональный id Telegram
+     */
     @Column(name = "shippingOptionId")
     private String shippingOptionId;
 
+    /**
+     * Комментарий к заказу
+     */
     @Column(name = "comment")
     private String comment;
 
+    /**
+     * Платежная информация
+     */
     @Column(name = "paymentInfo")
     private String paymentInfo;
 
+    /**
+     * Дополнительная информация
+     */
     @Column(name = "info")
     private String info;
 }

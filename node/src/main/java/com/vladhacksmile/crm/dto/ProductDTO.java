@@ -10,6 +10,9 @@ import lombok.*;
 @ToString
 public class ProductDTO {
 
+    /**
+     * Идентификатор продукта
+     */
     private Long id;
 
     /**

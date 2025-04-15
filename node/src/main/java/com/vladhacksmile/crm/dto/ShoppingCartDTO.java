@@ -1,8 +1,7 @@
 package com.vladhacksmile.crm.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.vladhacksmile.crm.converter.OrderItemConverter;
-import com.vladhacksmile.crm.jdbc.OrderItem;
+import com.vladhacksmile.crm.jdbc.order.OrderItem;
 import lombok.*;
 
 import java.util.List;

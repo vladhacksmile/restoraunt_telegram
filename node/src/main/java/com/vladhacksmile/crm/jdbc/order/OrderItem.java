@@ -1,4 +1,4 @@
-package com.vladhacksmile.crm.jdbc;
+package com.vladhacksmile.crm.jdbc.order;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;

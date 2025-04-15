@@ -1,14 +1,12 @@
 package com.vladhacksmile.crm.controller;
 
 import com.vladhacksmile.crm.dto.OrderDTO;
-import com.vladhacksmile.crm.dto.ProductDTO;
-import com.vladhacksmile.crm.dto.ResponseMapper;
-import com.vladhacksmile.crm.jdbc.OrderStatus;
-import com.vladhacksmile.crm.jdbc.User;
+import com.vladhacksmile.crm.utils.ResponseMapper;
+import com.vladhacksmile.crm.jdbc.order.OrderStatus;
+import com.vladhacksmile.crm.jdbc.user.User;
 import com.vladhacksmile.crm.model.result.Result;
 import com.vladhacksmile.crm.model.result.SearchResult;
 import com.vladhacksmile.crm.service.OrderService;
-import com.vladhacksmile.crm.service.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -27,8 +25,8 @@ public class OrderController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Result<OrderDTO>> getOrder(@AuthenticationPrincipal User authUser, @PathVariable Long orderId) {
-        return ResponseMapper.map(orderService.getOrder(authUser, orderId));
+    public ResponseEntity<Result<OrderDTO>> getOrder(@AuthenticationPrincipal User authUser, @PathVariable Long id) {
+        return ResponseMapper.map(orderService.getOrder(authUser, id));
     }
 
     @GetMapping

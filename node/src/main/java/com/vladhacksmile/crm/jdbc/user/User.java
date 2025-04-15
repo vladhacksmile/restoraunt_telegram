@@ -1,4 +1,4 @@
-package com.vladhacksmile.crm.jdbc;
+package com.vladhacksmile.crm.jdbc.user;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;

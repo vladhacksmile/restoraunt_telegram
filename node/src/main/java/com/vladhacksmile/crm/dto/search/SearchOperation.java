@@ -1,6 +1,7 @@
 package com.vladhacksmile.crm.dto.search;
 
 import lombok.Getter;
+import org.springframework.lang.Nullable;
 
 @Getter
 public enum SearchOperation {
@@ -23,12 +24,13 @@ public enum SearchOperation {
         this.name = name;
     }
 
-    public static SearchOperation find(String name) {
+    public @Nullable static SearchOperation find(String name) {
         for (SearchOperation operation: values()) {
             if (name.equalsIgnoreCase(operation.getName())) {
                 return operation;
             }
         }
+
         return null;
     }
 }

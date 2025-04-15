@@ -2,15 +2,20 @@ package com.vladhacksmile.crm.service.impl;
 
 import com.vladhacksmile.crm.dao.*;
 import com.vladhacksmile.crm.dto.OrderDTO;
-import com.vladhacksmile.crm.dto.ProductDTO;
 import com.vladhacksmile.crm.dto.ShoppingCartDTO;
-import com.vladhacksmile.crm.gpt.TelegramEmoji;
+import com.vladhacksmile.crm.utils.TelegramEmoji;
 import com.vladhacksmile.crm.jdbc.*;
+import com.vladhacksmile.crm.jdbc.order.Order;
+import com.vladhacksmile.crm.jdbc.order.OrderItem;
+import com.vladhacksmile.crm.jdbc.order.OrderStatus;
+import com.vladhacksmile.crm.jdbc.user.Role;
+import com.vladhacksmile.crm.jdbc.user.TelegramUser;
+import com.vladhacksmile.crm.jdbc.user.User;
 import com.vladhacksmile.crm.model.result.Result;
 import com.vladhacksmile.crm.model.result.SearchResult;
 import com.vladhacksmile.crm.service.OrderService;
-import com.vladhacksmile.crm.service.UserService;
-import com.vladhacksmile.crm.service.impl.dispatchers.ProducerServiceImpl;
+import com.vladhacksmile.crm.service.auth.UserService;
+import com.vladhacksmile.crm.service.dispatchers.ProducerService;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -22,10 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 
-import java.time.Clock;
 import java.time.LocalDateTime;
-import java.time.ZonedDateTime;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -45,7 +47,7 @@ public class OrderServiceImpl implements OrderService {
     private ProductDAO productDAO;
 
     @Autowired
-    private ProducerServiceImpl producerService;
+    private ProducerService producerService;
 
     @Autowired
     private OrderDAO orderDAO;
@@ -184,7 +186,11 @@ public class OrderServiceImpl implements OrderService {
         if (telegramUser != null) {
             SendMessage sendMessage = new SendMessage();
             sendMessage.setChatId(telegramUser.getChatId());
-            sendMessage.setText(TelegramEmoji.BURGER + " Статус вашего заказа №" + order.getId() + " обновлен! Новый статус заказа " + order.getOrderStatus() + "!" + (order.getOrderStatus() == OrderStatus.READY ? (" Вы можете забрать его на кассе!" + (authUser.getRole() != Role.CLIENT && StringUtils.isNotEmpty(order.getComment()) ? (" Комментарий к заказу: " + order.getComment()) : "")) : ""));
+            sendMessage.setText(TelegramEmoji.BURGER + " Статус вашего заказа №" + order.getId() +
+                    " обновлен! Новый статус заказа " + order.getOrderStatus() + "!" +
+                    (order.getOrderStatus() == OrderStatus.READY ? (" Вы можете забрать его на кассе!" +
+                            (authUser.getRole() != Role.CLIENT && StringUtils.isNotEmpty(order.getComment()) ?
+                                    (" Комментарий к заказу: " + order.getComment()) : "")) : ""));
             producerService.producerAnswer(sendMessage);
         }
 
@@ -224,12 +230,12 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public Result<OrderDTO> getOrder(User authUser, Long orderId) {
-        if (orderId == null) {
+    public Result<OrderDTO> getOrder(User authUser, Long id) {
+        if (id == null) {
             return resultWithStatus(INCORRECT_PARAMS, ORDER_ID_IS_NULL);
         }
 
-        Order order = orderDAO.findById(orderId).orElse(null);
+        Order order = orderDAO.findById(id).orElse(null);
         if (order == null) {
             return resultWithStatus(NOT_FOUND, ORDER_NOT_FOUND);
         }
@@ -339,7 +345,7 @@ public class OrderServiceImpl implements OrderService {
         return order;
     }
 
-    private Result<?> validate(OrderDTO orderDTO) {
+    private static <T> Result<T> validate(OrderDTO orderDTO) {
         if (orderDTO == null) {
             return resultWithStatus(INCORRECT_PARAMS, ORDER_IS_NULL);
         }

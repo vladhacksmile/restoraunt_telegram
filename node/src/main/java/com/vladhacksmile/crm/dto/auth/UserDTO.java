@@ -1,7 +1,6 @@
 package com.vladhacksmile.crm.dto.auth;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.vladhacksmile.crm.jdbc.Role;
+import com.vladhacksmile.crm.jdbc.user.Role;
 import lombok.*;
 
 @Getter

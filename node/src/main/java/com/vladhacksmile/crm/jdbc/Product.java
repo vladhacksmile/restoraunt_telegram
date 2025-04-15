@@ -12,11 +12,6 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @ToString
-// TODO: тк корзина 1, можем в json просто писать список товаров и количество, map userId, json, promocode and etc
-// заказ формируется отдельно
-// таблица с заказами
-// телеграм бот
-// решить с интеграцией AI
 public class Product {
 
     /**

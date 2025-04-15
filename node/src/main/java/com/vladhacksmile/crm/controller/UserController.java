@@ -1,12 +1,12 @@
 package com.vladhacksmile.crm.controller;
 
-import com.vladhacksmile.crm.dto.ResponseMapper;
+import com.vladhacksmile.crm.utils.ResponseMapper;
 import com.vladhacksmile.crm.dto.ShoppingCartDTO;
 import com.vladhacksmile.crm.dto.auth.AuthDTO;
 import com.vladhacksmile.crm.dto.auth.UserDTO;
-import com.vladhacksmile.crm.jdbc.User;
+import com.vladhacksmile.crm.jdbc.user.User;
 import com.vladhacksmile.crm.model.result.Result;
-import com.vladhacksmile.crm.service.UserService;
+import com.vladhacksmile.crm.service.auth.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -36,13 +36,13 @@ public class UserController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Result<UserDTO>> removeUser(@AuthenticationPrincipal User authUser, @PathVariable Long userId) {
-        return ResponseMapper.map(userService.removeUser(authUser, userId));
+    public ResponseEntity<Result<UserDTO>> removeUser(@AuthenticationPrincipal User authUser, @PathVariable Long id) {
+        return ResponseMapper.map(userService.removeUser(authUser, id));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Result<UserDTO>> getUser(@AuthenticationPrincipal User authUser, @PathVariable Long userId) {
-        return ResponseMapper.map(userService.getUser(authUser, userId));
+    public ResponseEntity<Result<UserDTO>> getUser(@AuthenticationPrincipal User authUser, @PathVariable Long id) {
+        return ResponseMapper.map(userService.getUser(authUser, id));
     }
 
     @PutMapping("/shopping_cart")
@@ -51,7 +51,7 @@ public class UserController {
     }
 
     @GetMapping("/shopping_cart/{user_id}")
-    public ResponseEntity<Result<ShoppingCartDTO>> getUserShoppingCart(@AuthenticationPrincipal User authUser, @PathVariable Long userId) {
+    public ResponseEntity<Result<ShoppingCartDTO>> getUserShoppingCart(@AuthenticationPrincipal User authUser, @PathVariable(name = "user_id") Long userId) {
         return ResponseMapper.map(userService.getUserShoppingCart(authUser, userId));
     }
 }

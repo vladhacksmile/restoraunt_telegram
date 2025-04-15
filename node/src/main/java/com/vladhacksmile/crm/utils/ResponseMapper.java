@@ -1,4 +1,4 @@
-package com.vladhacksmile.crm.dto;
+package com.vladhacksmile.crm.utils;
 
 import com.vladhacksmile.crm.model.result.Result;
 import org.springframework.http.HttpStatus;

@@ -1,4 +1,4 @@
-package com.vladhacksmile.crm.jdbc;
+package com.vladhacksmile.crm.jdbc.user;
 
 import lombok.*;
 import org.springframework.security.core.userdetails.UserDetails;

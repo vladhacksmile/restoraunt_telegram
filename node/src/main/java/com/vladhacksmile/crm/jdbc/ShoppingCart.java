@@ -1,6 +1,7 @@
 package com.vladhacksmile.crm.jdbc;
 
 import com.vladhacksmile.crm.converter.OrderItemConverter;
+import com.vladhacksmile.crm.jdbc.order.OrderItem;
 import lombok.*;
 
 import javax.persistence.*;

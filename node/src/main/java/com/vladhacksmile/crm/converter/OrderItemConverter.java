@@ -4,20 +4,25 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.vladhacksmile.crm.jdbc.OrderItem;
+import com.vladhacksmile.crm.jdbc.order.OrderItem;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
 import javax.persistence.AttributeConverter;
+import javax.persistence.Converter;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 
 @Log4j2
+@Converter
+@Component
 public class OrderItemConverter implements AttributeConverter<List<OrderItem>, String> {
 
-    private static final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Override
     public String convertToDatabaseColumn(List<OrderItem> orderItems) {
@@ -26,7 +31,6 @@ public class OrderItemConverter implements AttributeConverter<List<OrderItem>, S
         }
 
         try {
-//            orderItems.sort(Comparator.comparing(OrderItem::getPrice));
             return objectMapper.writeValueAsString(orderItems);
         } catch (JsonProcessingException e) {
             log.error("", e);
@@ -42,9 +46,7 @@ public class OrderItemConverter implements AttributeConverter<List<OrderItem>, S
         }
 
         try {
-            List<OrderItem> orderItems = objectMapper.readValue(string, new TypeReference<>(){});
-//            orderItems.sort(Comparator.comparing(OrderItem::getPrice));
-            return orderItems;
+            return objectMapper.readValue(string, new TypeReference<>(){});
         } catch (JsonProcessingException e) {
             log.error("", e);
         }

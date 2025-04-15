@@ -1,14 +1,12 @@
 package com.vladhacksmile.crm.utils.jwt;
 
-import com.vladhacksmile.crm.jdbc.User;
+import com.vladhacksmile.crm.jdbc.user.User;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.SignatureAlgorithm;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
-import java.security.Key;
 import java.util.Date;
 
 
@@ -24,7 +22,6 @@ public class JwtUtils {
     public String generateJwtToken(Authentication authentication) {
         User userPrincipal = (User) authentication.getPrincipal();
         return Jwts.builder().setSubject((userPrincipal.getMail())).setIssuedAt(new Date())
-                //.setExpiration(new Date((new Date()).getTime() + jwtExpirationMs))
                 .signWith(SignatureAlgorithm.HS512, jwtSecret).compact();
     }
 
@@ -33,10 +30,8 @@ public class JwtUtils {
             Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(jwt);
             return true;
         } catch (Exception e) {
-//            System.err.println(e.getMessage());
+            return false;
         }
-
-        return false;
     }
 
     public String getUserNameFromJwtToken(String jwt) {

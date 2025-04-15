@@ -1,4 +1,4 @@
-package com.vladhacksmile.crm.gpt;
+package com.vladhacksmile.crm.utils;
 
 import lombok.Getter;
 

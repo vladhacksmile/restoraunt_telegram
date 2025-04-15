@@ -1,4 +1,4 @@
-package com.vladhacksmile.crm.dto;
+package com.vladhacksmile.crm.utils;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

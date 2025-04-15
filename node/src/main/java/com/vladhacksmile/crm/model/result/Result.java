@@ -65,6 +65,7 @@ public class Result<T> {
     }
 
     public <O> Result<O> cast() {
+        //noinspection unchecked
         return (Result<O>) this;
     }
 }

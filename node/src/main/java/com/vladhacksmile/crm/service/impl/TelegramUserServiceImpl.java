@@ -1,15 +1,12 @@
 package com.vladhacksmile.crm.service.impl;
 
 import com.vladhacksmile.crm.dao.TelegramUserDAO;
-import com.vladhacksmile.crm.dao.UserDAO;
 import com.vladhacksmile.crm.dto.auth.UserDTO;
-import com.vladhacksmile.crm.jdbc.Role;
-import com.vladhacksmile.crm.jdbc.TelegramUser;
-import com.vladhacksmile.crm.jdbc.User;
+import com.vladhacksmile.crm.jdbc.user.TelegramUser;
 import com.vladhacksmile.crm.model.result.Result;
-import com.vladhacksmile.crm.service.UserService;
+import com.vladhacksmile.crm.service.TelegramUserService;
+import com.vladhacksmile.crm.service.auth.UserService;
 import com.vladhacksmile.crm.utils.PasswordGenerator;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -17,15 +14,13 @@ import org.springframework.transaction.annotation.Transactional;
 import org.telegram.telegrambots.meta.api.objects.Message;
 
 import java.time.LocalDateTime;
-import java.util.Objects;
 
 import static com.vladhacksmile.crm.model.result.Result.resultOk;
 import static com.vladhacksmile.crm.model.result.Result.resultWithStatus;
 import static com.vladhacksmile.crm.model.result.status.Status.*;
-import static com.vladhacksmile.crm.model.result.status.StatusDescription.*;
 
 @Service
-public class TelegramUserServiceImpl {
+public class TelegramUserServiceImpl implements TelegramUserService {
 
     @Autowired
     private TelegramUserDAO telegramUserDAO;
@@ -36,6 +31,7 @@ public class TelegramUserServiceImpl {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Override
     @Transactional
     public Result<TelegramUser> findOrSaveUser(Message message, String email, String phoneNumber) {
         var messageUser = message.getFrom();

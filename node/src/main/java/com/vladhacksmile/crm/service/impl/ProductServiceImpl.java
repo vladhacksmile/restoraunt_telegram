@@ -6,7 +6,7 @@ import com.vladhacksmile.crm.dto.ProductDTO;
 import com.vladhacksmile.crm.dto.search.SearchCriteria;
 import com.vladhacksmile.crm.dto.search.SearchOperation;
 import com.vladhacksmile.crm.jdbc.Product;
-import com.vladhacksmile.crm.jdbc.User;
+import com.vladhacksmile.crm.jdbc.user.User;
 import com.vladhacksmile.crm.model.result.Result;
 import com.vladhacksmile.crm.model.result.SearchResult;
 import com.vladhacksmile.crm.service.ProductService;
@@ -100,13 +100,13 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    public Result<ProductDTO> removeProduct(User authUser, Long productId) {
+    public Result<ProductDTO> removeProduct(User authUser, Long id) {
         LocalDateTime now = LocalDateTime.now();
-        if (productId == null) {
+        if (id == null) {
             return resultWithStatus(INCORRECT_PARAMS, PRODUCT_ID_IS_NULL);
         }
 
-        Product product = productDAO.findById(productId).orElse(null);
+        Product product = productDAO.findById(id).orElse(null);
         if (product == null || product.getDeletedDate() != null) {
             return resultWithStatus(NOT_FOUND, PRODUCT_NOT_FOUND);
         }
@@ -119,12 +119,12 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public Result<ProductDTO> getProduct(User authUser, Long productId) {
-        if (productId == null) {
+    public Result<ProductDTO> getProduct(User authUser, Long id) {
+        if (id == null) {
             return resultWithStatus(INCORRECT_PARAMS, PRODUCT_ID_IS_NULL);
         }
 
-        Product product = productDAO.findById(productId).orElse(null);
+        Product product = productDAO.findById(id).orElse(null);
         if (product == null || product.getDeletedDate() != null) {
             return resultWithStatus(NOT_FOUND, PRODUCT_NOT_FOUND);
         }
@@ -149,14 +149,6 @@ public class ProductServiceImpl implements ProductService {
 
         if (!sortType.equalsIgnoreCase("ASC") && !sortType.equalsIgnoreCase("DESC")) {
             return resultWithStatus(INCORRECT_PARAMS, INCORRECT_SORT_TYPE);
-        }
-
-        if (StringUtils.isNotEmpty(sortColumn)) { // todo валидация колнок
-            return resultWithStatus(INCORRECT_PARAMS, INCORRECT_SORT_COLUMN);
-        }
-
-        if (StringUtils.isNotEmpty(filterField)) { // todo валидация колнок
-            return resultWithStatus(INCORRECT_PARAMS, INCORRECT_FILTER_FIELD);
         }
 
         SearchOperation searchOperation = null;
@@ -220,7 +212,7 @@ public class ProductServiceImpl implements ProductService {
         return productDTO;
     }
 
-    private Result<?> validate(ProductDTO productDTO) {
+    private <T> Result<T> validate(ProductDTO productDTO) {
         if (productDTO == null) {
             return resultWithStatus(INCORRECT_PARAMS, PRODUCT_IS_NULL);
         }

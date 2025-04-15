@@ -1,11 +1,9 @@
-package com.vladhacksmile.crm.security;
+package com.vladhacksmile.crm.config;
 
 import com.vladhacksmile.crm.utils.jwt.AuthEntryPointJwt;
 import com.vladhacksmile.crm.utils.jwt.AuthTokenFilter;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -51,6 +49,7 @@ public class WebSecurityConfig {
     public Jackson2JsonMessageConverter converter() {
         return new Jackson2JsonMessageConverter();
     }
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.cors().and().csrf().disable()

@@ -1,7 +1,7 @@
 package com.vladhacksmile.crm.utils;
 
-import com.vladhacksmile.crm.jdbc.Role;
-import com.vladhacksmile.crm.jdbc.User;
+import com.vladhacksmile.crm.jdbc.user.Role;
+import com.vladhacksmile.crm.jdbc.user.User;
 import com.vladhacksmile.crm.model.result.Result;
 
 import java.util.Objects;

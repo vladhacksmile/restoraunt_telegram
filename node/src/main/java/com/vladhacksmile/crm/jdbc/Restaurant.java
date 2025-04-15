@@ -13,14 +13,23 @@ import javax.persistence.*;
 @ToString
 public class Restaurant {
 
+    /**
+     * Идентификатор
+     */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     private Long id;
 
+    /**
+     * Имя
+     */
     @Column(name = "name", nullable = false)
     private String name;
 
+    /**
+     * Адрес
+     */
     @Column(name = "address", nullable = false)
     private String address;
 
@@ -30,5 +39,5 @@ public class Restaurant {
     @Column(name = "userId", nullable = false)
     private Long userId;
 
-    // время работы и т п? закрыт открыт и т п
+    // можно еще добавить время работы и т п? закрыт открыт и т п
 }

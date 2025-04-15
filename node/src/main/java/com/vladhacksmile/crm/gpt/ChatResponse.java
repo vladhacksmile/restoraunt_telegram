@@ -23,6 +23,7 @@ public class ChatResponse {
     public static class Choice {
 
         private int index;
+
         private GPTMessage message;
     }
 }
